@@ -15,8 +15,8 @@ export class AuthController {
     return await this.authService.login(userData);
   }
   @Post('verify')
-  async verify() {
-    return await this.authService.verify();
+  async verify(@Body() username: string) {
+    return await this.authService.verify(username);
   }
   @Post()
   async forgetPassword() {
