@@ -8,6 +8,7 @@ import { OtpModule } from './otp/otp.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/guard/auth.guard';
 import { EmailModule } from './email/email.module';
+import { RolesGuard } from './roles/role';
 
 @Module({
   imports: [
@@ -38,6 +39,10 @@ import { EmailModule } from './email/email.module';
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })
