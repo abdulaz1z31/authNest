@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { registerDto } from './dto/register-auth.dto';
 import { loginDto } from './dto/login-auth.dto';
+import { OtpDataDto } from 'src/otp/dto/otpdata.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -15,8 +16,8 @@ export class AuthController {
     return await this.authService.login(userData);
   }
   @Post('verify')
-  async verify(@Body() username: string) {
-    return await this.authService.verify(username);
+  async verify(@Body() otpData: OtpDataDto) {
+    return await this.authService.verify(otpData);
   }
   @Post()
   async forgetPassword() {

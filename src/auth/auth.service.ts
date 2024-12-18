@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { Body, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from 'src/user/entities/user.entity';
@@ -10,13 +9,16 @@ import { UserService } from 'src/user/user.service';
 import { userRole } from 'src/constants/role.enum';
 import { CustomError } from 'src/errors/error';
 import { Hashing } from 'src/hashing/hashing';
-import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import { OtpService } from 'src/otp/otp.service';
+import { generateOTP } from 'src/hashing/otp';
+import { OtpDataDto } from 'src/otp/dto/otpdata.dto';
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private userService: UserService,
     private jwtService: JwtService,
+    private otpService: OtpService,
   ) {}
 
   async register(userData: registerDto): Promise<Omit<User, 'password'>> {
@@ -30,19 +32,42 @@ export class AuthService {
     userData.role = userRole.user;
     const hashPassword = await Hashing.generate(userData.password);
     userData.password = hashPassword;
+    const onetimepassword = generateOTP();
+    const time = new Date(Date.now() + 3 * 60 * 1000);
+    const otpData = {
+      username: userData.username,
+      otp: onetimepassword,
+      expire_time: time,
+    };
+    await this.otpService.create(otpData);
     return await this.userService.create(userData);
   }
   async verify(
-    username: string,
+    otpData: OtpDataDto,
   ): Promise<{ message: string; statusCode: number }> {
-    await this.userModel.findOneAndUpdate({ username }, { isActive: true });
+    const otpdata = await this.otpService.findOne(otpData.username);
+    if (!otpdata) {
+      throw new CustomError('otp not found', 403);
+    }
+    if (otpdata.otp !== otpData.otp) {
+      throw new CustomError('Otp is not valid', 403);
+    }
+    const curTime = new Date(Date.now());
+    if (otpdata.expire_time < curTime) {
+      throw new CustomError('Time expired', 403);
+    }
+    await this.otpService.remove(otpData.username);
+    await this.userModel.findOneAndUpdate(
+      { username: otpData.username },
+      { isActive: true },
+    );
     return {
       message: 'Profile activated',
       statusCode: 200,
     };
   }
-  async login(userData: loginDto) {
-    let curUser;
+  async login(userData: loginDto): Promise<{ accessToken: string }> {
+    let curUser: any;
     if (userData.email) {
       curUser = await this.userModel.findOne({
         email: userData.email,
@@ -65,10 +90,9 @@ export class AuthService {
       isActive: curUser.isActive,
     };
     return {
-      access_token: await this.jwtService.signAsync(payload),
+      accessToken: await this.jwtService.signAsync(payload),
     };
   }
-
   async forgetPassword() {}
   async resetPassword() {}
   async getMe() {}

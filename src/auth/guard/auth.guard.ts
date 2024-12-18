@@ -7,6 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { jwtConstants } from 'src/constants/auth.constants';
+import { CustomError } from 'src/errors/error';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -22,6 +23,9 @@ export class AuthGuard implements CanActivate {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: jwtConstants.secret,
       });
+      if (!payload.isActive) {
+        throw new CustomError('User not active', 403);
+      }
       request['user'] = payload;
     } catch {
       throw new UnauthorizedException();
