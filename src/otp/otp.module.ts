@@ -8,5 +8,6 @@ import { MongooseModule } from '@nestjs/mongoose';
   imports: [MongooseModule.forFeature([{ name: Otp.name, schema: otpSchema }])],
   controllers: [OtpController],
   providers: [OtpService],
+  exports: [OtpService, MongooseModule],
 })
 export class OtpModule {}

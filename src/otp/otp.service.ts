@@ -8,8 +8,8 @@ import { Model } from 'mongoose';
 export class OtpService {
   constructor(@InjectModel(Otp.name) private otpModel: Model<Otp>) {}
   async create(createOtpDto: CreateOtpDto) {
-    const newOtp = new this.otpModel(createOtpDto);
-    await newOtp.save();
+    const newOtp = await this.otpModel.create(createOtpDto);
+    newOtp.save();
   }
 
   async findOne(username: string): Promise<Otp> {

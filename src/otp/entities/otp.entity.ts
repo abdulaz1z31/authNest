@@ -1,14 +1,14 @@
-import { Prop, SchemaFactory } from '@nestjs/mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
 export type OtpDocument = HydratedDocument<Otp>;
-
+@Schema()
 export class Otp {
-  @Prop({ required: true })
+  @Prop()
   username: string;
-  @Prop({ required: true })
+  @Prop()
   otp: string;
-  @Prop({ required: true })
+  @Prop()
   expire_time: Date;
 }
 

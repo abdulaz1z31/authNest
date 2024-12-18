@@ -12,6 +12,7 @@ import { Hashing } from 'src/hashing/hashing';
 import { OtpService } from 'src/otp/otp.service';
 import { generateOTP } from 'src/hashing/otp';
 import { OtpDataDto } from 'src/otp/dto/otpdata.dto';
+import { EmailService } from 'src/email/mailer';
 @Injectable()
 export class AuthService {
   constructor(
@@ -19,6 +20,7 @@ export class AuthService {
     private userService: UserService,
     private jwtService: JwtService,
     private otpService: OtpService,
+    private emailService: EmailService,
   ) {}
 
   async register(userData: registerDto): Promise<Omit<User, 'password'>> {
@@ -40,6 +42,11 @@ export class AuthService {
       expire_time: time,
     };
     await this.otpService.create(otpData);
+    await this.emailService.sendEmail(
+      userData.email,
+      'Your otp password for register',
+      onetimepassword,
+    );
     return await this.userService.create(userData);
   }
   async verify(
@@ -54,6 +61,7 @@ export class AuthService {
     }
     const curTime = new Date(Date.now());
     if (otpdata.expire_time < curTime) {
+      await this.otpService.remove(otpData.username);
       throw new CustomError('Time expired', 403);
     }
     await this.otpService.remove(otpData.username);
